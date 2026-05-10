@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Genel Kurul Kürsü Ekranı</title>
+    <link href="https://fonts.cdnfonts.com/css/seven-segment" rel="stylesheet">
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100vh;
+            background-color: #532525; /* Birebir görseldeki arka plan rengi */
+            overflow: hidden;
+            user-select: none;
+            
+            /* Ekranı dikey ve yatayda tam olarak ortalar */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Dijital Panel Alanı */
+        .digital-panel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Seven Segment', sans-serif;
+            font-size: 15vw; /* Devasa ekran boyutu */
+            font-style: italic; /* Meclisteki gibi hafif sağa eğik */
+            font-weight: 900; /* Kalın segmentler */
+            user-select: none;
+        }
+
+        /* Hane Kutuları (Sayıların kaymasını önleyen sihirli kısım) */
+        .digit-group {
+            position: relative;
+            width: 25vw; /* 2 hane için ayrılan sabit genişlik */
+            text-align: center;
+            display: inline-block;
+        }
+
+        /* İki Nokta Kutusu */
+        .separator {
+            position: relative;
+            width: 5vw; /* İki noktalar için ayrılan sabit dar alan */
+            text-align: center;
+            display: inline-block;
+        }
+
+        /* Arkada sönük duran gölgeler (Asla kaymaz, tam alttadır) */
+        .bg-layer {
+            color: #692c2c; /* Sönük kırmızı segment rengi */
+            opacity: 0.20; /* Gerçekçi panel derinliği */
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            z-index: 1;
+        }
+
+        /* Önde yanan parlak kırmızı LED'ler */
+        .fg-layer {
+            color: #ff0542; /* Görseldeki parlak kırmızı/pembe LED rengi */
+            text-shadow: 0 0 15px #ff0542, 0 0 30px #ff0542; /* Parlama efekti */
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Süre sıfırlandığında flaşör animasyonu */
+        .flashing {
+            animation: flash-animation 0.8s infinite;
+        }
+        @keyframes flash-animation {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.15; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="digital-panel" id="clock-panel">
+        <div class="digit-group">
+            <div class="bg-layer">88</div>
+            <div class="fg-layer" id="hh">00</div>
+        </div>
+
+        <div class="separator">
+            <div class="bg-layer">:</div>
+            <div class="fg-layer">:</div>
+        </div>
+
+        <div class="digit-group">
+            <div class="bg-layer">88</div>
+            <div class="fg-layer" id="mm">00</div>
+        </div>
+
+        <div class="separator">
+            <div class="bg-layer">:</div>
+            <div class="fg-layer">:</div>
+        </div>
+
+        <div class="digit-group">
+            <div class="bg-layer">88</div>
+            <div class="fg-layer" id="ss">00</div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            databaseURL: "https://tbmm-sayac-default-rtdb.firebaseio.com/"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        const hhDisplay = document.getElementById('hh');
+        const mmDisplay = document.getElementById('mm');
+        const ssDisplay = document.getElementById('ss');
+        const panel = document.getElementById('clock-panel');
+
+        database.ref('sure').on('value', (snapshot) => {
+            const yeniSure = snapshot.val();
+            if (yeniSure) {
+                const parcalar = yeniSure.split(':');
+                if (parcalar.length === 3) {
+                    hhDisplay.innerText = parcalar[0];
+                    mmDisplay.innerText = parcalar[1];
+                    ssDisplay.innerText = parcalar[2];
+                }
+
+                if (yeniSure === "00:00:00") {
+                    panel.classList.add('flashing');
+                } else {
+                    panel.classList.remove('flashing');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
