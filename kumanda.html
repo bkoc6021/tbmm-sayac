@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TBMM Kürsü Kumandası</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            text-align: center;
+            padding: 15px;
+            margin: 0;
+        }
+        .container {
+            max-width: 450px;
+            margin: 20px auto;
+            background: #1e1e1e;
+            padding: 25px;
+            border-radius: 15px;
+            border: 2px solid #ff0000;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.2);
+        }
+        h2 { color: #ff0000; margin-top: 0; }
+        .preset-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 8px;
+            border: none;
+            transition: all 0.2s;
+        }
+        .btn-preset {
+            background-color: #2c2c2c;
+            color: #fff;
+            border: 1px solid #ff0000;
+        }
+        .btn-preset:active { background-color: #ff0000; }
+        .btn-control {
+            background-color: #ff0000;
+            color: white;
+            font-size: 18px;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .btn-control:active { background-color: #b30000; }
+        .btn-stop {
+            background-color: #333;
+            color: #ff0000;
+            border: 1px solid #ff0000;
+        }
+        input {
+            padding: 12px;
+            font-size: 18px;
+            width: 80%;
+            text-align: center;
+            border-radius: 8px;
+            border: 1px solid #555;
+            background-color: #2c2c2c;
+            color: white;
+            margin-bottom: 15px;
+        }
+        .error-msg {
+            color: #ff5555;
+            padding: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="main-container">
+        <h2>🏛️ TBMM Divan Kumandası</h2>
+        <p style="font-size: 13px; color: #aaa;">Kürsü Konuşma ve Oylama Sayacı</p>
+        <hr style="border: 0.5px solid #333; margin: 20px 0;">
+        
+        <div class="preset-buttons">
+            <button class="btn-preset" onclick="sureAyarla(120)">⏱️ 2 Dk (Dış Kürsü)</button>
+            <button class="btn-preset" onclick="sureAyarla(180)">⏱️ 3 Dk (Oylama)</button>
+            <button class="btn-preset" onclick="sureAyarla(300)">⏱️ 5 Dk (Söz Hakkı)</button>
+            <button class="btn-preset" onclick="sureAyarla(600)">⏱️ 10 Dk (Grup)</button>
+        </div>
+
+        <input type="number" id="timerInput" placeholder="Özel Saniye Girin (Örn: 60)">
+        
+        <button class="btn-control" onclick="baslat()">▶ Oturumu Başlat</button>
+        <button class="btn-control btn-stop" onclick="durdur()">⏹ Durdur / Reset</button>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const dbURL = urlParams.get('db');
+
+        if (!dbURL) {
+            document.getElementById('main-container').innerHTML = "<div class='error-msg'>⚠️ Hata: URL sonuna Firebase veritabanı adresinizi 'db' parametresi olarak eklemelisiniz!<br><br>Örnek:<br>kumanda.html?db=https://projeniz.firebaseio.com/</div>";
+        } else {
+            const firebaseConfig = { databaseURL: dbURL };
+            firebase.initializeApp(firebaseConfig);
+            const database = firebase.database();
+
+            let geriSayimInterval;
+
+            function ekranaYazdir(metin) {
+                database.ref('sure').set(metin);
+            }
+
+            function sureAyarla(saniye) {
+                document.getElementById('timerInput').value = saniye;
+                let dakika = Math.floor(saniye / 60);
+                let kalanSaniye = saniye % 60;
+                ekranaYazdir(String(dakika).padStart(2, '0') + ":" + String(kalanSaniye).padStart(2, '0'));
+            }
+
+            function baslat() {
+                clearInterval(geriSayimInterval);
+                let toplamSaniye = parseInt(document.getElementById('timerInput').value);
+                
+                if (isNaN(toplamSaniye) || toplamSaniye <= 0) {
+                    alert("Lütfen önce bir süre seçin veya saniye girin!");
+                    return;
+                }
+
+                function guncelle() {
+                    if (toplamSaniye < 0) {
+                        clearInterval(geriSayimInterval);
+                        ekranaYazdir("00:00");
+                        return;
+                    }
+
+                    let dakika = Math.floor(toplamSaniye / 60);
+                    let saniye = toplamSaniye % 60;
+
+                    let formatli = String(dakika).padStart(2, '0') + ":" + String(saniye).padStart(2, '0');
+                    ekranaYazdir(formatli);
+                    
+                    toplamSaniye--;
+                }
+
+                guncelle();
+                geriSayimInterval = setInterval(guncelle, 1000);
+            }
+
+            function durdur() {
+                clearInterval(geriSayimInterval);
+                ekranaYazdir("00:00");
+            }
+        }
+    </script>
+</body>
+</html>
