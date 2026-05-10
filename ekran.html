@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TBMM Genel Kurul Kürsü Ekranı</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #0d0404;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+        }
+        .digital-clock {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 22vw;
+            color: #ff0000;
+            text-shadow: 0 0 25px #ff0000, 0 0 50px #ff0000;
+            letter-spacing: 5px;
+        }
+        .flashing {
+            animation: flash-animation 0.8s infinite;
+        }
+        @keyframes flash-animation {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.15; }
+        }
+        .error-msg {
+            color: white;
+            font-family: sans-serif;
+            font-size: 20px;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="digital-clock" id="time-display">00:00</div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script>
+        // URL'den Firebase Database linkini çeken fonksiyon
+        const urlParams = new URLSearchParams(window.location.search);
+        const dbURL = urlParams.get('db');
+
+        if (!dbURL) {
+            document.body.innerHTML = "<div class='error-msg'>⚠️ Hata: Lütfen URL sonuna Firebase veritabanı adresinizi ekleyin!<br>Örnek: ekran.html?db=https://projeniz.firebaseio.com/</div>";
+        } else {
+            // Dinamik Firebase Kurulumu
+            const firebaseConfig = {
+                databaseURL: dbURL
+            };
+            firebase.initializeApp(firebaseConfig);
+            const database = firebase.database();
+            const display = document.getElementById('time-display');
+
+            // Veritabanını dinle
+            database.ref('sure').on('value', (snapshot) => {
+                const yeniSure = snapshot.val();
+                if (yeniSure) {
+                    display.innerText = yeniSure;
+                    if (yeniSure === "00:00") {
+                        display.classList.add('flashing');
+                    } else {
+                        display.classList.remove('flashing');
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
